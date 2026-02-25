@@ -26,6 +26,10 @@ def parse_json(data):
 
 # --- RUTAS API ---
 
+@app.route('/')
+def home():
+    return jsonify({"status": "online", "message": "Servidor SDIA funcionando correctamente"}), 200
+
 @app.route('/api/clients', methods=['GET'])
 def get_clients():
     try:
