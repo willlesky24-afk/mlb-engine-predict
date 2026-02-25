@@ -67,8 +67,8 @@ function saveLocalState() {
 function renderLogin() {
     viewContainer.innerHTML = `
         <div class="fade-in" style="max-width: 400px; margin: 100px auto; padding: 2rem; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border); text-align: center;">
-            <div class="logo-icon" style="margin: 0 auto 1.5rem; width: 60px; height: 60px;">
-                <i data-lucide="shield-check" style="width: 30px; height: 30px;"></i>
+            <div class="logo-icon" style="margin: 0 auto 1.5rem; width: 80px; height: 80px; background: none; overflow: hidden;">
+                <img src="icon.png" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
             </div>
             <h2 style="margin-bottom: 0.5rem;">S.D.I.A Acceso</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Ingresa tu llave para gestionar tu base de datos personal.</p>
