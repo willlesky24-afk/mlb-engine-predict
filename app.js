@@ -293,6 +293,9 @@ window.renderPendingClientsView = (targetContainer) => {
                 <h2>Clientes por Pagar</h2>
                 <p>Lista de cobros pendientes (Se eliminan automáticamente al saldar).</p>
             </div>
+            <button class="btn btn-primary" onclick="window.openModal('client')">
+                <i data-lucide="user-plus"></i> Nuevo Cliente
+            </button>
         </div>
         <div class="table-container">
             <table>
@@ -601,6 +604,7 @@ window.openModal = (type) => {
                 <input type="text" id="c-lastname" placeholder="Apellido" class="form-input" required>
                 <input type="text" id="c-id" placeholder="Cédula" class="form-input" required>
                 <input type="text" id="c-phone" placeholder="Teléfono" class="form-input" required>
+                <input type="number" id="c-debt" placeholder="Deuda Inicial ($)" class="form-input" step="0.01" value="0">
                 <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                     <button type="button" class="btn" style="background: var(--glass); flex: 1;" onclick="window.closeModal()">Cancelar</button>
                     <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Cliente</button>
@@ -671,8 +675,8 @@ async function handleClientSubmit(e) {
         lastname: document.getElementById('c-lastname').value,
         idCard: document.getElementById('c-id').value,
         phone: document.getElementById('c-phone').value,
-        totalDebt: 0,
-        status: 'paid',
+        totalDebt: parseFloat(document.getElementById('c-debt').value) || 0,
+        status: (parseFloat(document.getElementById('c-debt').value) || 0) > 0 ? 'pending' : 'paid',
         createdAt: new Date().toISOString()
     };
 
