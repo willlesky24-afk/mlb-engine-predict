@@ -32,17 +32,22 @@ def home():
 
 @app.route('/api/clients', methods=['GET'])
 def get_clients():
+    user_id = request.headers.get('X-User-ID')
+    if not user_id: return jsonify({"error": "No User ID"}), 401
     try:
-        clients = list(db.clients.find())
+        clients = list(db.clients.find({"userId": user_id}))
         return jsonify(parse_json(clients))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/clients', methods=['POST'])
 def add_client():
+    user_id = request.headers.get('X-User-ID')
+    if not user_id: return jsonify({"error": "No User ID"}), 401
     try:
         data = request.json
         new_client = {
+            "userId": user_id,
             "name": data.get('name'),
             "lastname": data.get('lastname'),
             "idCard": data.get('idCard'),
@@ -60,17 +65,22 @@ def add_client():
 
 @app.route('/api/payments', methods=['GET'])
 def get_payments():
+    user_id = request.headers.get('X-User-ID')
+    if not user_id: return jsonify({"error": "No User ID"}), 401
     try:
-        payments = list(db.payments.find())
+        payments = list(db.payments.find({"userId": user_id}))
         return jsonify(parse_json(payments))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/payments', methods=['POST'])
 def add_payment():
+    user_id = request.headers.get('X-User-ID')
+    if not user_id: return jsonify({"error": "No User ID"}), 401
     try:
         data = request.json
         new_payment = {
+            "userId": user_id,
             "clientId": data.get('clientId'),
             "amount": float(data.get('amount')),
             "date": data.get('date', datetime.now().isoformat()),
@@ -79,9 +89,9 @@ def add_payment():
         }
         result = db.payments.insert_one(new_payment)
         
-        # Actualizar deuda del cliente en la DB
+        # Actualizar deuda del cliente en la DB verificando userId
         db.clients.update_one(
-            {"idCard": data.get('clientIdCard')}, 
+            {"idCard": data.get('clientIdCard'), "userId": user_id}, 
             {"$inc": {"totalDebt": -float(data.get('amount'))}}
         )
 
@@ -92,9 +102,11 @@ def add_payment():
 
 @app.route('/api/clients/<idCard>', methods=['DELETE'])
 def delete_client(idCard):
+    user_id = request.headers.get('X-User-ID')
+    if not user_id: return jsonify({"error": "No User ID"}), 401
     try:
-        db.clients.delete_one({"idCard": idCard})
-        db.payments.delete_many({"clientId": idCard})
+        db.clients.delete_one({"idCard": idCard, "userId": user_id})
+        db.payments.delete_many({"clientId": idCard, "userId": user_id})
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

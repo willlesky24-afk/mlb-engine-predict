@@ -13,6 +13,7 @@ let isOffline = false;
 
 // Persistence and State
 const state = {
+    userId: localStorage.getItem('sdia_user_id') || null,
     currentView: 'dashboard',
     clients: [],
     payments: [],
@@ -22,7 +23,8 @@ const state = {
 
 // Cargar datos desde el Servidor (MongoDB bridge) con Fallback a Local
 async function loadData() {
-    // Cargar tasa de cambio guardada
+    if (!state.userId) return renderLogin();
+
     state.exchangeRate = parseFloat(localStorage.getItem('stitch_tasa')) || 45.45;
     const tasaInput = document.getElementById('tasa-dia');
     if (tasaInput) tasaInput.value = state.exchangeRate;
@@ -30,7 +32,10 @@ async function loadData() {
     try {
         const fetchConfig = {
             method: 'GET',
-            headers: { 'Accept': 'application/json' }
+            headers: {
+                'Accept': 'application/json',
+                'X-User-ID': state.userId
+            }
         };
 
         const [clientsRes, paymentsRes] = await Promise.all([
@@ -45,17 +50,55 @@ async function loadData() {
     } catch (error) {
         console.warn('Modo Offline: Usando almacenamiento local');
         isOffline = true;
-        state.clients = JSON.parse(localStorage.getItem('stitch_clients')) || [];
-        state.payments = JSON.parse(localStorage.getItem('stitch_payments')) || [];
+        state.clients = JSON.parse(localStorage.getItem(`sdia_clients_${state.userId}`)) || [];
+        state.payments = JSON.parse(localStorage.getItem(`sdia_payments_${state.userId}`)) || [];
     }
     renderCurrentView();
 }
 
 // Persistencia Local (Como respaldo)
 function saveLocalState() {
-    localStorage.setItem('stitch_clients', JSON.stringify(state.clients));
-    localStorage.setItem('stitch_payments', JSON.stringify(state.payments));
+    if (!state.userId) return;
+    localStorage.setItem(`sdia_clients_${state.userId}`, JSON.stringify(state.clients));
+    localStorage.setItem(`sdia_payments_${state.userId}`, JSON.stringify(state.payments));
+    localStorage.setItem('sdia_user_id', state.userId);
 }
+
+function renderLogin() {
+    viewContainer.innerHTML = `
+        <div class="fade-in" style="max-width: 400px; margin: 100px auto; padding: 2rem; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border); text-align: center;">
+            <div class="logo-icon" style="margin: 0 auto 1.5rem; width: 60px; height: 60px;">
+                <i data-lucide="shield-check" style="width: 30px; height: 30px;"></i>
+            </div>
+            <h2 style="margin-bottom: 0.5rem;">S.D.I.A Acceso</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Ingresa tu llave para gestionar tu base de datos personal.</p>
+            
+            <input type="text" id="login-id" placeholder="ID de tu Negocio / Proyecto" class="form-input" style="text-align: center; font-weight: 600; font-size: 1.1rem; letter-spacing: 1px; margin-bottom: 1.5rem;">
+            
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;" onclick="window.handleLogin()">
+                Abrir Mi Panel <i data-lucide="arrow-right"></i>
+            </button>
+            <p style="margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted);">Tus datos se guardan de forma aislada y segura en la nube.</p>
+        </div>
+    `;
+    safeCreateIcons();
+}
+
+window.handleLogin = () => {
+    const id = document.getElementById('login-id').value.trim();
+    if (id.length < 3) return alert('La llave debe tener al menos 3 caracteres');
+    state.userId = id;
+    saveLocalState();
+    loadData();
+};
+
+window.logout = () => {
+    if (confirm('¿Cerrar sesión? Seguirás teniendo acceso con tu llave.')) {
+        state.userId = null;
+        localStorage.removeItem('sdia_user_id');
+        location.reload();
+    }
+};
 
 // DOM Elements
 const viewContainer = document.getElementById('view-container');
@@ -158,6 +201,8 @@ window.installApp = async () => {
 
 // Rendering Views
 function renderCurrentView() {
+    if (!state.userId) return renderLogin();
+
     viewContainer.innerHTML = '';
     const container = document.createElement('div');
     container.className = 'fade-in';
@@ -336,7 +381,10 @@ window.deleteClient = async (idCard) => {
 
     try {
         if (!isOffline) {
-            await fetch(`${API_BASE_URL}/clients/${idCard}`, { method: 'DELETE' });
+            await fetch(`${API_BASE_URL}/clients/${idCard}`, {
+                method: 'DELETE',
+                headers: { 'X-User-ID': state.userId }
+            });
         }
         state.clients = state.clients.filter(c => c.idCard !== idCard);
         state.payments = state.payments.filter(p => p.clientId !== idCard);
@@ -556,7 +604,10 @@ async function handleClientSubmit(e) {
         if (!isOffline) {
             const res = await fetch(`${API_BASE_URL}/clients`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-ID': state.userId
+                },
                 body: JSON.stringify(newClient)
             });
             const saved = await res.json();
@@ -584,6 +635,7 @@ async function handlePaymentSubmit(e) {
 
     const newPayment = {
         clientId: idCard,
+        clientIdCard: idCard,
         amount: amountUSD,
         method: document.getElementById('p-method').value,
         date: document.getElementById('p-date').value,
@@ -595,7 +647,10 @@ async function handlePaymentSubmit(e) {
         if (!isOffline) {
             await fetch(`${API_BASE_URL}/payments`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-ID': state.userId
+                },
                 body: JSON.stringify(newPayment)
             });
         }
@@ -633,7 +688,8 @@ window.generatePDF = (paymentId) => {
 
 const style = document.createElement('style');
 style.textContent = `
-    .form-input { background: var(--bg-card); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 10px; width: 100%; font-family: inherit; }
+    .form-input { background: var(--bg-card); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 10px; width: 100%; font-family: inherit; margin-bottom: 1rem; outline: none; transition: border 0.3s; }
+    .form-input:focus { border-color: var(--primary); }
     .clickable:active { transform: scale(0.98); }
 `;
 document.head.appendChild(style);
