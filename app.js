@@ -7,7 +7,7 @@ window.onerror = function (msg, url, line) {
 // Configuración de API dinámica
 const API_DOMAIN = window.location.hostname || 'localhost';
 // Cambia CLOUD_API_URL por la URL que te dará Railway o Render después de subir el server.py
-const CLOUD_API_URL = 'https://tu-servidor-stitch.up.railway.app';
+const CLOUD_API_URL = 'https://inertial-magnetar-1.onrender.com';
 const API_BASE_URL = API_DOMAIN.includes('netlify.app') ? `${CLOUD_API_URL}/api` : `http://${API_DOMAIN}:5000/api`;
 let isOffline = false;
 
