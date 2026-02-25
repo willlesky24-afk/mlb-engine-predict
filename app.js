@@ -264,11 +264,6 @@ function renderDashboardView(container) {
                 </div>
             </div>
         </div>
-
-        <div class="info-card" style="background: var(--bg-card); padding: 2rem; border-radius: 20px; border: 1px solid var(--border); margin-top: 1rem;">
-            <h3>Interfaz Simplificada</h3>
-            <p style="color: var(--text-muted); margin-top: 10px;">Hemos quitado las gráficas pesadas para que la app cargue más rápido en tu teléfono. Toda la data se aloja en el dispositivo y se sincroniza si hay servidor.</p>
-        </div>
     `;
 }
 
