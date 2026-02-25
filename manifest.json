@@ -1,11 +1,12 @@
 {
-  "name": "Stitch Finance",
-  "short_name": "StitchFin",
-  "description": "Control financiero premium con integración Stitch",
+  "name": "Sistema de Inventario Administrativo",
+  "short_name": "SDIA",
+  "description": "Una aplicación que te permite llevar el control de tu proyecto y finanzas.",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#0a0b10",
-  "theme_color": "#6366f1",
+  "orientation": "any",
+  "background_color": "#89281d",
+  "theme_color": "#554e4e",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/5551/5551211.png",
