@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 # --- PARTE 1: IMPORTACIONES ---
+from server import app  # Importante para que Render encuentre la app
 from pymongo import MongoClient
 from datetime import datetime
 import sys
