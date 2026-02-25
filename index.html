@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stitch Finance - Control Inteligente</title>
+    <meta name="description"
+        content="Herramienta avanzada de control financiero para empresas con integración de Stitch Dashboard.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- jsPDF for Receipt Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+
+<body>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i data-lucide="activity"></i>
+                </div>
+                <h1>Stitch<span>Finance</span></h1>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-view="clients">
+                    <i data-lucide="users"></i>
+                    <span>Clientes</span>
+                </button>
+                <button class="nav-item" data-view="payments">
+                    <i data-lucide="credit-card"></i>
+                    <span>Pagos</span>
+                </button>
+                <button class="nav-item" id="btn-install-app" onclick="window.installApp()"
+                    style="display: none; background: rgba(16, 185, 129, 0.1); color: var(--accent); margin-top: 10px; border: 1px dashed var(--accent);">
+                    <i data-lucide="download"></i>
+                    <span>Descargar App</span>
+                </button>
+            </nav>
+
+            <div class="user-profile">
+                <div class="avatar">AD</div>
+                <div class="user-info">
+                    <p class="user-name">Admin Console</p>
+                    <p class="user-role">Consultor</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <i data-lucide="search"></i>
+                    <input type="text" placeholder="Buscar cliente o transacción...">
+                </div>
+                <div class="top-actions">
+                    <div class="currency-settings"
+                        style="display: flex; align-items: center; gap: 8px; background: var(--bg-card); padding: 5px 12px; border-radius: 12px; border: 1px solid var(--border);">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Tasa Bs:</span>
+                        <input type="number" id="tasa-dia" value="45.50" step="0.1"
+                            style="width: 60px; background: none; border: none; color: var(--primary); font-weight: bold; font-family: inherit; outline: none;">
+                        <select id="currency-toggle"
+                            style="background: none; border: none; color: white; border-left: 1px solid var(--border); padding-left: 5px; cursor: pointer; font-family: inherit;">
+                            <option value="USD">$ USD</option>
+                            <option value="VES">Bs VES</option>
+                        </select>
+                    </div>
+                    <button class="icon-button">
+                        <i data-lucide="bell"></i>
+                        <span class="badge"></span>
+                    </button>
+                    <button class="btn btn-primary" id="btn-new-payment">
+                        <i data-lucide="plus"></i>
+                        Nuevo Pago
+                    </button>
+                </div>
+            </header>
+
+            <div id="view-container">
+                <!-- Views will be injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container" class="modal-overlay hidden">
+        <div class="modal-content">
+            <!-- Modal content injected here -->
+        </div>
+    </div>
+
+    <script src="app.js" type="module"></script>
+</body>
+
+</html>
