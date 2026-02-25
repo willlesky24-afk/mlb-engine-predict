@@ -12,7 +12,7 @@ if sys.stdout.encoding != 'utf-8':
     import io
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app) # Permitir que el frontend (JS) llame a esta API
 
 # --- CONEXIÓN MONGODB ---
@@ -28,7 +28,7 @@ def parse_json(data):
 
 @app.route('/')
 def home():
-    return jsonify({"status": "online", "message": "Servidor SDIA funcionando correctamente"}), 200
+    return app.send_static_file('index.html')
 
 @app.route('/api/clients', methods=['GET'])
 def get_clients():
