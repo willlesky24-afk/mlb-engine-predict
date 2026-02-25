@@ -111,6 +111,26 @@ def delete_client(idCard):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/clients/<idCard>', methods=['PUT'])
+def update_client(idCard):
+    user_id = request.headers.get('X-User-ID')
+    if not user_id: return jsonify({"error": "No User ID"}), 401
+    try:
+        data = request.json
+        update_data = {
+            "name": data.get('name'),
+            "lastname": data.get('lastname'),
+            "totalDebt": float(data.get('totalDebt', 0)),
+            "status": "pending" if float(data.get('totalDebt', 0)) > 0 else "paid"
+        }
+        db.clients.update_one(
+            {"idCard": idCard, "userId": user_id},
+            {"$set": update_data}
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     print("🚀 SERVIDOR STITCH FINANCE API")
     print("Acceso Local: http://localhost:5000")

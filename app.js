@@ -211,6 +211,7 @@ function renderCurrentView() {
         case 'dashboard': renderDashboardView(container); break;
         case 'clients': renderClients(container); break;
         case 'payments': renderPayments(container); break;
+        case 'pending_clients': window.renderPendingClientsView(container); break;
     }
 
     viewContainer.appendChild(container);
@@ -271,12 +272,16 @@ function renderDashboardView(container) {
     `;
 }
 
-window.renderPendingClientsView = () => {
+window.renderPendingClientsView = (targetContainer) => {
     state.currentView = 'pending_clients';
-    viewContainer.innerHTML = '';
-    const container = document.createElement('div');
+    const container = targetContainer || document.createElement('div');
+    if (!targetContainer) {
+        viewContainer.innerHTML = '';
+        viewContainer.appendChild(container);
+    }
     container.className = 'fade-in';
 
+    // Filtrar estrictamente clientes con deuda mayor a 0
     const pendingClients = state.clients.filter(c => c.totalDebt > 0);
 
     container.innerHTML = `
@@ -286,14 +291,14 @@ window.renderPendingClientsView = () => {
                     <i data-lucide="arrow-left"></i> Volver al Panel
                 </button>
                 <h2>Clientes por Pagar</h2>
-                <p>Lista detallada de saldos pendientes y últimos abonos.</p>
+                <p>Lista de cobros pendientes (Se eliminan automáticamente al saldar).</p>
             </div>
         </div>
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Nombre</th>
+                        <th>Nombre / Editar</th>
                         <th style="color: var(--accent-red);">Deuda</th>
                         <th style="color: var(--accent);">Último Abono</th>
                         <th>Fecha</th>
@@ -305,8 +310,15 @@ window.renderPendingClientsView = () => {
         const lastPayment = clientPayments.length > 0 ? clientPayments[clientPayments.length - 1] : null;
 
         return `
-                        <tr onclick="window.viewClientDetails('${client.idCard}')" style="cursor: pointer;">
-                            <td><strong>${client.name} ${client.lastname}</strong></td>
+                        <tr>
+                            <td onclick="window.viewClientDetails('${client.idCard}')" style="cursor: pointer;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <strong>${client.name} ${client.lastname}</strong>
+                                    <button class="icon-button" onclick="event.stopPropagation(); window.openEditClientModal('${client.idCard}')" style="padding: 4px; background: rgba(99,102,241,0.1);">
+                                        <i data-lucide="edit-3" style="width: 14px;"></i>
+                                    </button>
+                                </div>
+                            </td>
                             <td style="color: var(--accent-red); font-weight: bold;">$ ${client.totalDebt.toFixed(2)}</td>
                             <td style="color: var(--accent); font-weight: bold;">
                                 ${lastPayment ? `$ ${lastPayment.amount.toFixed(2)}` : '---'}
@@ -321,8 +333,72 @@ window.renderPendingClientsView = () => {
             </table>
         </div>
     `;
-    viewContainer.appendChild(container);
     safeCreateIcons();
+};
+
+window.openEditClientModal = (idCard) => {
+    const client = state.clients.find(c => c.idCard === idCard);
+    const content = modalContainer.querySelector('.modal-content');
+    modalContainer.classList.remove('hidden');
+
+    content.innerHTML = `
+        <h3>Editar Datos de Cobro</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">Cédula: ${client.idCard}</p>
+        <form id="edit-client-form" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="edit-name" value="${client.name}" class="form-input" placeholder="Nombre" required>
+                <input type="text" id="edit-lastname" value="${client.lastname}" class="form-input" placeholder="Apellido" required>
+            </div>
+            <label style="font-size: 0.8rem; color: var(--text-muted);">Ajustar Deuda Manualmente ($):</label>
+            <input type="number" id="edit-debt" value="${client.totalDebt}" step="0.01" class="form-input" required>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="button" class="btn" style="background: var(--glass); flex: 1;" onclick="window.closeModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Actualizar</button>
+            </div>
+        </form>
+    `;
+    document.getElementById('edit-client-form').onsubmit = (e) => window.handleEditClientSubmit(e, idCard);
+    safeCreateIcons();
+};
+
+window.handleEditClientSubmit = async (e, idCard) => {
+    e.preventDefault();
+    const updatedData = {
+        name: document.getElementById('edit-name').value,
+        lastname: document.getElementById('edit-lastname').value,
+        totalDebt: parseFloat(document.getElementById('edit-debt').value)
+    };
+
+    try {
+        if (!isOffline) {
+            await fetch(`${API_BASE_URL}/clients/${idCard}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-ID': state.userId
+                },
+                body: JSON.stringify(updatedData)
+            });
+        }
+
+        // Actualizar estado local
+        const client = state.clients.find(c => c.idCard === idCard);
+        if (client) {
+            client.name = updatedData.name;
+            client.lastname = updatedData.lastname;
+            client.totalDebt = updatedData.totalDebt;
+            client.status = client.totalDebt > 0 ? 'pending' : 'paid';
+        }
+
+        saveLocalState();
+        window.closeModal();
+        if (state.currentView === 'pending_clients') window.renderPendingClientsView();
+        else renderCurrentView();
+
+    } catch (err) {
+        alert('Error al actualizar datos');
+    }
 };
 
 function renderClients(container, filterTerm = '') {
