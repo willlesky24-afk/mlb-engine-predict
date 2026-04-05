@@ -3,7 +3,11 @@ import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import date
+from dotenv import load_dotenv
 import sys
+
+# Load environmental variables
+load_dotenv()
 
 # Import our predictive models
 from models.monte_carlo_sim import MLBMonteCarlo, TeamSimProfile
@@ -101,6 +105,7 @@ def predict_game():
             db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
             
         engine = get_engine(db_url)
+        init_db(engine) # Asegura que la tabla vacía nazca si no existe
         session = get_session(engine)
         
         history_record = PredictionHistory(
