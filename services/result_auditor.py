@@ -20,7 +20,18 @@ def run_daily_audit():
     print("⚾ INICIANDO AUDITORIA SABERMETICA DE PREDICCIONES")
     print("=========================================================")
     
-    db_url = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@localhost:5432/{os.getenv('POSTGRES_DB')}"
+    # 1. Chequear si hay URL directa (Supabase/Neon)
+    db_url = os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL')
+    
+    # 2. Si no hay URL directa, construirla con Host dinamico (no hardcoded localhost)
+    if not db_url:
+        host = os.getenv('POSTGRES_HOST', 'localhost')
+        port = os.getenv('POSTGRES_PORT', '5432')
+        user = os.getenv('POSTGRES_USER')
+        pwd = os.getenv('POSTGRES_PASSWORD')
+        db = os.getenv('POSTGRES_DB')
+        db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
+
     engine = get_engine(db_url)
     init_db(engine)  # Asegurar que la nueva tabla PredictionHistory exista
     session = get_session(engine)

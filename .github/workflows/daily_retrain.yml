@@ -46,7 +46,7 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          # Exponemos direct_url por compatibilidad
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
         run: |
           python -m services.result_auditor
@@ -56,6 +56,7 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
         run: |
           python -m models.auto_tuner

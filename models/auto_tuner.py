@@ -56,7 +56,15 @@ def optimize_weights():
     print("🧠 INICIANDO AUTO-TUNER DE MACHINE LEARNING")
     print("=========================================================")
     
-    db_url = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@localhost:5432/{os.getenv('POSTGRES_DB')}"
+    db_url = os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL')
+    if not db_url:
+        host = os.getenv('POSTGRES_HOST', 'localhost')
+        port = os.getenv('POSTGRES_PORT', '5432')
+        user = os.getenv('POSTGRES_USER')
+        pwd = os.getenv('POSTGRES_PASSWORD')
+        db = os.getenv('POSTGRES_DB')
+        db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
+
     engine = get_engine(db_url)
     session = get_session(engine)
     
