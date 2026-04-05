@@ -2,11 +2,15 @@ import os
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from datetime import date
 import sys
 
 # Import our predictive models
 from models.monte_carlo_sim import MLBMonteCarlo, TeamSimProfile
 from models.mlb_engine import predict_matchup, TeamInput
+
+# Database Integration
+from services.models import get_engine, get_session, init_db, PredictionHistory
 
 # Force UTF-8 for Windows console encoding
 if sys.stdout.encoding != 'utf-8':
@@ -81,6 +85,41 @@ def predict_game():
     # 1. Run Monte Carlo
     mc_engine = MLBMonteCarlo(iterations=1000) # 1000 for fast web response
     mc_result = mc_engine.run_simulation(yankees, dodgers)
+
+    # =========================================================
+    # GUARDAR PREDICCIÓN EN BASE DE DATOS (FEEDBACK LOOP)
+    # =========================================================
+    try:
+        # Recuperar credenciales del modo dinamico (Supabase o Localhost)
+        db_url = os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL')
+        if not db_url:
+            host = os.getenv('POSTGRES_HOST', 'localhost')
+            port = os.getenv('POSTGRES_PORT', '5432')
+            user = os.getenv('POSTGRES_USER')
+            pwd = os.getenv('POSTGRES_PASSWORD')
+            db = os.getenv('POSTGRES_DB')
+            db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
+            
+        engine = get_engine(db_url)
+        session = get_session(engine)
+        
+        history_record = PredictionHistory(
+            game_date=date.today(),
+            team_a=yankees.name,
+            team_b=dodgers.name,
+            predicted_winner=yankees.name if mc_result.win_prob_a > 0.5 else dodgers.name,
+            predicted_runs_a=mc_result.team_a_avg_runs,
+            predicted_runs_b=mc_result.team_b_avg_runs,
+            win_probability_a=mc_result.win_prob_a * 100,
+            win_probability_b=mc_result.win_prob_b * 100,
+            weights=w  # Pesos de Machine Learning al momento de predecir
+        )
+        session.add(history_record)
+        session.commit()
+        session.close()
+        print(f"[i] Prediccion {yankees.name} vs {dodgers.name} guardada en DB para auditoria futura.")
+    except Exception as e:
+        print(f"[!] Error guardando historial en la Base de Datos: {e}")
 
     # 2. Setup response data
     response = {
